@@ -1,4 +1,9 @@
-server <- function(input, output) {
+library(shiny)
+library(evaluomeR)
+
+source("modules/stability.R")
+
+server <- function(input, output, session) {
     rv <- reactiveValues(
         inputData = NULL
     )
@@ -28,7 +33,7 @@ server <- function(input, output) {
         return(head(df))
     })
     
-    # Logic of uiOutput("tabTable") ----
+    # Logic for tab uiOutput("tabTable") ----
     output$tabTable <- renderUI({
         
         if (is.null(rv$inputData) || rv$inputData == "") {
@@ -36,11 +41,13 @@ server <- function(input, output) {
         }
         
         tagList(
-            tags$h3("Data table head:"),
+            tags$h3("Input data table head"),
             tags$hr(),
-            tableOutput("tableContent")
+            div(style = 'overflow-x: auto', tableOutput("tableContent"))
         )
-        
-        
     })
+    
+    # Logic for tab uiOutput("tabTable") ----
+    output$tabStability <- callModule(stability, "tabStability", reactive(rv))
+    
 }
