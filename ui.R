@@ -1,4 +1,5 @@
 library(shiny)
+library(shinyjs)
 library(shinythemes)
 library(evaluomeR)
 
@@ -9,6 +10,7 @@ ui <- navbarPage(theme = shinytheme("paper"),
     # Analysis tab  ----
     tabPanel("Analysis",
         useShinyalert(),
+        useShinyjs(),
         # Analysis tab - Sidebar ====
         sidebarLayout(
             sidebarPanel(

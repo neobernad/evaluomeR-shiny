@@ -4,6 +4,7 @@ MSG_NO_INPUT_DATA="No input data selected"
 MSG_K_MIN_NOT_IN_RANGE="Min. num. of clusters must be in range [2,15]"
 MSG_K_MAX_NOT_IN_RANGE="Min. num. of clusters must be in range [2,15]"
 MSG_K_MIN_GREATER_THAN_K_MAX="Min. num. of clusters cannot be greater than max. num. of clusters"
+MSG_STABILITY_WENT_WRONG="Stability indexes calculation could not finish properly"
 
 ## // Messages
 

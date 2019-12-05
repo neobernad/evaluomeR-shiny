@@ -56,7 +56,6 @@ server <- function(input, output, session) {
     })
     # Logic for tab stabilityUI("tabStability") ----
     # 'tabStability' UI is managed by 'stabilityUI'
-    
     callModule(stability, "tabStability", rv)
     
     
