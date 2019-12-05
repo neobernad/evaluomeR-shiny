@@ -4,17 +4,11 @@ library(evaluomeR)
 
 source("modules/stability.R")
 
-wd = paste0(dirname(rstudioapi::getSourceEditorContext()$path),"/")
-
-SAMPLE_FILE_MAP = c("Gene expression differences" = paste0(wd, "data/dataset-metrics-Imbeaudetal-NAR2005.csv"),
-                    "78 AgroPortal ontologies" = paste0(wd, "data/agro.csv"),
-                    "119 OBO Foundry ontologies" = paste0(wd, "data/obo-119.csv"))
-
-
 ui <- navbarPage(theme = shinytheme("paper"),
     "evaluomeR", # Application title
     # Analysis tab  ----
     tabPanel("Analysis",
+        useShinyalert(),
         # Analysis tab - Sidebar ====
         sidebarLayout(
             sidebarPanel(
@@ -24,7 +18,8 @@ ui <- navbarPage(theme = shinytheme("paper"),
                                      "text/comma-separated-values,text/plain",
                                      ".csv")),
                 selectInput("inputSample", "Or select a sample CSV:", 
-                            choices=c("Choose one" = "", SAMPLE_FILE_MAP),
+                            #choices=c("Choose one" = "", SAMPLE_FILE_MAP),
+                            choices=c(SAMPLE_FILE_MAP),
                             multiple = FALSE),
                 
                 tags$hr(),

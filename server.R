@@ -1,11 +1,13 @@
 library(shiny)
+library(shinyalert)
 library(evaluomeR)
 
 source("modules/stability.R")
 
 server <- function(input, output, session) {
     rv <- reactiveValues(
-        inputData = NULL
+        inputData = NULL,
+        inputDf = NULL
     )
     
     observeEvent(input$inputSample, {
@@ -16,28 +18,34 @@ server <- function(input, output, session) {
         rv$inputData=input$inputCSV$datapath
     })
     
+    # When rv$inputData changes, load the df
+    observeEvent(rv$inputData, {
+        if (!is.null(rv$inputData) && rv$inputData != "") {
+            cat(file=stderr(), "Loading input:", rv$inputData, "\n")
+            tryCatch({
+                rv$inputDf <- read.csv(rv$inputData,
+                                       header = TRUE,
+                                       sep = input$sep,
+                                       quote = input$quote)
+            }, error = function(e) {
+                errorMsg = paste("Could not load CSV:",e)
+                cat(file=stderr(), errorMsg, "\n")
+                shinyalert("Oops!", errorMsg, type = "error")
+                safeError(e)
+                #stop(safeError(e))
+            })
+        }
+    })
+    
     output$tableContent <- renderTable({
-        tryCatch(
-            {
-                df <- read.csv(rv$inputData,
-                               header = TRUE,
-                               sep = input$sep,
-                               quote = input$quote)
-            },
-            error = function(e) {
-                # return a safeError if a parsing error occurs
-                stop(safeError(e))
-            }
-        )
-        
-        return(head(df))
+        return(head(rv$inputDf))
     })
     
     # Logic for tab uiOutput("tabTable") ----
     output$tabTable <- renderUI({
         
         if (is.null(rv$inputData) || rv$inputData == "") {
-            return(tags$h3("No input data selected"))
+            return(tags$h3(MSG_NO_INPUT_DATA))
         }
         
         tagList(
@@ -46,8 +54,11 @@ server <- function(input, output, session) {
             div(style = 'overflow-x: auto', tableOutput("tableContent"))
         )
     })
+    # Logic for tab stabilityUI("tabStability") ----
+    # 'tabStability' UI is managed by 'stabilityUI'
     
-    # Logic for tab uiOutput("tabTable") ----
-    output$tabStability <- callModule(stability, "tabStability", reactive(rv))
+    callModule(stability, "tabStability", rv)
+    
+    
     
 }
