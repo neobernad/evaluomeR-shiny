@@ -21,10 +21,10 @@ stabilityUI <- function(id) {
                      fluidRow( # Row of buttons
                         column(3, actionButton(ns("btnExecute"), "Execute", icon("terminal"), 
                                style="color: #fff; background-color: #337ab7; ")),
-                        column(3, actionButton(ns("btnDownloadCSV"), "CSV", icon("fas fa-download"), 
-                               style="color: #fff; background-color: #0c9463; ")),
-                        column(3, actionButton(ns("btnDownloadImages"), "Images", icon("fas fa-download"), 
-                               style="color: #fff; background-color: #0c9463; "))
+                        column(3, hidden(downloadButton(ns("btnDownloadCSV"), "CSV", 
+                               style="color: #fff; background-color: #0c9463; "))),
+                        column(3, hidden(downloadButton(ns("btnDownloadImages"), "Images", 
+                               style="color: #fff; background-color: #0c9463; ")))
                      )
                 ) # End well panel
              )
@@ -48,9 +48,44 @@ stabilityUI <- function(id) {
 # Stability Logic ----
 stability <- function(input, output, session, data) {
   
+  results <- reactiveValues(
+                stabilityData=NULL,
+                visibleDownloadButtons=FALSE
+             )
+  
   output$stabilityResult <- renderUI({
     if (is.null(data$inputData) || data$inputData == "" || is.null(data$inputDf)) {
       return(fluidRow(column(12, tags$h3(MSG_NO_INPUT_DATA))))
+    }
+  })
+  
+  #output$btnDownloadCSV <- downloadHandler(
+    #filename = function() {
+    #  paste("stabilityData", ".zip", sep = "")
+    #},
+    #content = function(file) {
+      #tmpdir <- tempdir()
+      #setwd(tempdir())
+      #csvNameList = lapply(names(results$stabilitydata), 
+      #                     function(csvName) {paste0(csvName, ".csv")})
+      #cat("Lenght:", length(csvNameList), "\n")
+      #csvNameList = names(results$stabilitydata)
+      #for (csvName in csvNameList) {
+      #  print(csvName)
+      #  write.csv(assay(results$stabilityData[csvName]), file=csvName, row.names = FALSE)
+      #}
+      #zip(zipfile=file, files=unlist(csvNameList, use.names=FALSE))
+  #},
+  #contentType = "application/zip"
+  #)
+  
+  observeEvent(results$visibleDownloadButtons, {
+    if (results$visibleDownloadButtons) {
+      shinyjs::show("btnDownloadCSV", anim = FALSE)
+      shinyjs::show("btnDownloadImages", anim = FALSE)
+    } else {
+      shinyjs::hide("btnDownloadCSV", anim = FALSE)
+      shinyjs::hide("btnDownloadImages", anim = FALSE)
     }
   })
   
@@ -70,14 +105,17 @@ stability <- function(input, output, session, data) {
       shinyalert("Oops!", MSG_K_MIN_GREATER_THAN_K_MAX, type = "error")
       return(NULL)
     }
-    stabilityData <- runStability(data$inputDf, input$kmin, input$kmax, input$bs, input$seed)
-    if (is.null(stabilityData)) {
+    results$stabilityData =  runStability(data$inputDf, input$kmin, input$kmax, input$bs, input$seed)
+    if (is.null(results$stabilityData)) {
       shinyalert("Oops!", MSG_STABILITY_WENT_WRONG, type = "error")
       return(NULL)
     }
-    
-    # TODO: HIDE BUTTONS!
-    renderTables(output, stabilityData)
+    # TODO: results$stabilityData is nor propertly set, is NULL outside this function
+    renderTablesTabs(output, results)
+    csvNameList = lapply(names(results$stabilityData), 
+                         function(csvName) {paste0(csvName, ".csv")})
+    cat(" Lenght:", length(names(results$stabilityData)), "\n")
+    results$visibleDownloadButtons = TRUE
   })
   return(NULL)
   
@@ -91,10 +129,10 @@ runStability <- function(df, kmin, kmax, bs, seed) {
       "Running stability index with kmin=",kmin,", kmax=",kmax,
       ", bs=", bs, ", seed=", seed,"\n")
   shinyjs::disable("btnExecute")
-  stabilityData <- NULL
+  result <- NULL
   withCallingHandlers({
     shinyjs::html("evaluomeROutput", "")
-    stabilityData <- stabilityRange(data=df, k.range=c(kmin, kmax), 
+    result <- stabilityRange(data=df, k.range=c(kmin, kmax), 
                    bs=bs, seed=seed, getImages = FALSE)
   },
   message = function(m) {
@@ -102,18 +140,39 @@ runStability <- function(df, kmin, kmax, bs, seed) {
     })
   shinyjs::enable("btnExecute")
 
-  return(stabilityData)
+  return(result)
 }
 
 # Renders a table given a stability output 'stabilityData'
-renderTables <- function(output, stabilityData) {
+renderTablesTabs <- function(output, results) {
   output$stabilityResult <- renderUI({
-    tabsetPanel(id = "stabilityTables",
-        tabPanel("Hello", "This is the hello tab"),
-        tabPanel("Foo", "This is the foo tab"),
-        tabPanel("Bar", "This is the bar tab")
+    tabNum <- length(names(results$stabilityData))
+    tabNames <- names(results$stabilityData)
+    csvNameList = lapply(names(results$stabilityData), 
+                         function(csvName) {paste0(csvName, ".csv")})
+    cat("-- Lenght:", length(csvNameList), "\n")
+    
+    tagList(
+      tags$h5("Result tables"),
+      fluidRow(
+            column(12,
+              do.call(tabsetPanel,
+                c(id='stabilityTables',
+                 lapply(1:tabNum, function(i) {
+                    tabName <- tabNames[i]
+                    tabPanel(
+                      title=paste0(tabName), 
+                      renderTable({assay(results$stabilityData[tabName])})
+                    )
+                  }
+                )
+              )
+            )
+          )
+      ),
+      tags$hr()
     )
-    #df <- data.frame(assay(stabilityData))
-    #return(head(df))
+    
   })
 }
+

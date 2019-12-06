@@ -1,12 +1,16 @@
 library(shiny)
 library(shinyjs)
+library(shinyalert)
 library(shinythemes)
 library(evaluomeR)
 
 source("modules/stability.R")
 
 ui <- navbarPage(theme = shinytheme("paper"),
-    "evaluomeR", # Application title
+    windowTitle = "evaluomeR Online App",
+    title = "evaluomeR", # Application title
+    footer = tagList(tags$hr()),
+    inverse = TRUE, # Dark theme of cur. theme
     # Analysis tab  ----
     tabPanel("Analysis",
         useShinyalert(),
