@@ -1,5 +1,6 @@
 library(shiny)
 library(shinyjs)
+library(R.utils)
 
 # Stability UI ----
 stabilityUI <- function(id) {
@@ -59,25 +60,27 @@ stability <- function(input, output, session, data) {
     }
   })
   
-  #output$btnDownloadCSV <- downloadHandler(
-    #filename = function() {
-    #  paste("stabilityData", ".zip", sep = "")
-    #},
-    #content = function(file) {
-      #tmpdir <- tempdir()
-      #setwd(tempdir())
-      #csvNameList = lapply(names(results$stabilitydata), 
-      #                     function(csvName) {paste0(csvName, ".csv")})
-      #cat("Lenght:", length(csvNameList), "\n")
-      #csvNameList = names(results$stabilitydata)
-      #for (csvName in csvNameList) {
-      #  print(csvName)
-      #  write.csv(assay(results$stabilityData[csvName]), file=csvName, row.names = FALSE)
-      #}
-      #zip(zipfile=file, files=unlist(csvNameList, use.names=FALSE))
-  #},
-  #contentType = "application/zip"
-  #)
+  output$btnDownloadCSV <- downloadHandler(
+    filename = function() {
+      paste("stabilityData", ".tar.gz", sep = "")
+    },
+    content = function(file) {
+      #write.csv("data", file)
+      tmpdir <- tempdir()
+      setwd(tempdir())
+      csvNameList = unlist(lapply(names(results$stabilityData), 
+                           function(csvName) {paste0(csvName, ".csv")}), use.names=FALSE)
+      print(list.files(path = "."))
+      dfName = names(results$stabilityData)
+      for (i in 1:length(csvNameList)) {
+        #print(assay(results$stabilityData[dfName[i]]))
+        write.csv(assay(results$stabilityData[dfName[i]]), file=csvNameList[i], row.names = FALSE)
+      }
+      # TODO: El tar está vacío
+      print(csvNameList)
+      tar(tarfile = file, files="stability_mean.csv")# compression="gzip")
+    }
+  )
   
   observeEvent(results$visibleDownloadButtons, {
     if (results$visibleDownloadButtons) {
@@ -110,14 +113,11 @@ stability <- function(input, output, session, data) {
       shinyalert("Oops!", MSG_STABILITY_WENT_WRONG, type = "error")
       return(NULL)
     }
-    # TODO: results$stabilityData is nor propertly set, is NULL outside this function
+
     renderTablesTabs(output, results)
-    csvNameList = lapply(names(results$stabilityData), 
-                         function(csvName) {paste0(csvName, ".csv")})
-    cat(" Lenght:", length(names(results$stabilityData)), "\n")
     results$visibleDownloadButtons = TRUE
   })
-  return(NULL)
+  #return(NULL)
   
   #return (reactive({cat("--> ", data$inputData, "\n")}))
 }
@@ -150,7 +150,6 @@ renderTablesTabs <- function(output, results) {
     tabNames <- names(results$stabilityData)
     csvNameList = lapply(names(results$stabilityData), 
                          function(csvName) {paste0(csvName, ".csv")})
-    cat("-- Lenght:", length(csvNameList), "\n")
     
     tagList(
       tags$h5("Result tables"),
@@ -161,7 +160,7 @@ renderTablesTabs <- function(output, results) {
                  lapply(1:tabNum, function(i) {
                     tabName <- tabNames[i]
                     tabPanel(
-                      title=paste0(tabName), 
+                      title=paste0(tabName),
                       renderTable({assay(results$stabilityData[tabName])})
                     )
                   }
