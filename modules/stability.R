@@ -1,5 +1,8 @@
 library(shiny)
 library(shinyjs)
+library(plotly)
+library(gridExtra)
+library(ggpubr)
 
 # Stability UI ----
 stabilityUI <- function(id) {
@@ -22,8 +25,6 @@ stabilityUI <- function(id) {
                              column(3, actionButton(ns("btnExecute"), "Execute", icon("terminal"), 
                                                     style="color: #fff; background-color: #337ab7; ")),
                              column(3, hidden(downloadButton(ns("btnDownloadCSV"), "CSV", 
-                                                             style="color: #fff; background-color: #0c9463; "))),
-                             column(3, hidden(downloadButton(ns("btnDownloadImages"), "Images", 
                                                              style="color: #fff; background-color: #0c9463; ")))
                            )
       ) # End well panel
@@ -63,6 +64,8 @@ stability <- function(input, output, session, data) {
   observeEvent(data$inputData, {
     results$stabilityData=NULL
     results$visibleDownloadButtons = FALSE
+    output$stabilityResult = NULL
+    shinyjs::html("evaluomeROutput", "")
   })
   
   output$btnDownloadCSV <- downloadHandler(
@@ -93,10 +96,8 @@ stability <- function(input, output, session, data) {
   observeEvent(results$visibleDownloadButtons, {
     if (results$visibleDownloadButtons) {
       shinyjs::show("btnDownloadCSV", anim = FALSE)
-      shinyjs::show("btnDownloadImages", anim = FALSE)
     } else {
       shinyjs::hide("btnDownloadCSV", anim = FALSE)
-      shinyjs::hide("btnDownloadImages", anim = FALSE)
     }
   })
   
@@ -177,9 +178,66 @@ renderTablesTabs <- function(output, results) {
                )
         )
       ),
+      tags$hr(),
+      tags$h5("Result figures"),
+      renderFigures(results),
       tags$hr()
     )
     
   })
 }
+
+renderFigures <- function(results) {
+  stabilityMeanDf = as.data.frame(assay(results$stabilityData[["stability_mean"]]))
+  names(stabilityMeanDf) = gsub(x = names(stabilityMeanDf), pattern="^.*_.*_.*_", replacement = "k_")
+  stabilityMeanDfMelted = melt(stabilityMeanDf, id="Metric")
+  stabilityMeanDfMelted$value = as.numeric(stabilityMeanDfMelted$value)
+  
+  
+  p_kAcrossMetrics <- plot_ly(stabilityMeanDfMelted, x = ~Metric,
+          y = ~value, color = ~variable, colors = "Set1",
+          type = 'scatter', mode = 'lines+markers') %>%
+    layout(
+      title = "K values across metrics",
+      showlegend = TRUE,
+      xaxis = list(
+        title = 'Metrics'
+      ),
+      yaxis = list(
+        title = 'Stability index',
+        range = c(0,1)
+      )
+    )
+  
+  p_MetricsAcrossK <- plot_ly(stabilityMeanDfMelted, x = ~variable,
+                              y = ~value, color = ~Metric, colors = "Set1",
+                              type = 'scatter', mode = 'lines+markers') %>%
+    layout(
+      title = "Metrics across K values",
+      showlegend = TRUE,
+      xaxis = list(
+        title = 'K'
+      ),
+      yaxis = list(
+        title = 'Stability index',
+        range = c(0,1)
+      )
+    )
+  
+  
+  
+  return(renderUI({
+    
+    tagList(
+    #tags$h6("ASD"),
+    fluidRow(column(6, renderPlotly({
+      p_kAcrossMetrics
+    }))),
+    tags$hr(),
+    fluidRow(column(6, renderPlotly({
+      p_MetricsAcrossK
+    })))
+    )
+  }))
+} 
 

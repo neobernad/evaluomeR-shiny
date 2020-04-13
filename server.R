@@ -1,6 +1,7 @@
 library(shiny)
 library(shinyalert)
 library(evaluomeR)
+library(plotly)
 
 source("modules/stability.R")
 
