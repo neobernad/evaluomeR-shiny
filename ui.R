@@ -5,9 +5,10 @@ library(shinythemes)
 library(evaluomeR)
 
 source("modules/stability.R")
+source("modules/quality.R")
 
 ui <- navbarPage(theme = shinytheme("paper"),
-    windowTitle = "evaluomeR Online App",
+    windowTitle = "evaluomeR App",
     title = "evaluomeR", # Application title
     footer = tagList(tags$hr()),
     inverse = TRUE, # Dark theme of cur. theme
@@ -52,8 +53,8 @@ ui <- navbarPage(theme = shinytheme("paper"),
             # Analysis tab - Main panel ====
             mainPanel(
                 tabsetPanel(type = "tabs",
+                            tabPanel("Quality", qualityUI("tabQuality")),
                             tabPanel("Stability", stabilityUI("tabStability")),
-                            tabPanel("Quality", NULL),
                             tabPanel("Correlations", NULL),
                             tabPanel("Table", uiOutput("tabTable"))
                 )

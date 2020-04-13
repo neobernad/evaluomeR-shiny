@@ -1,22 +1,23 @@
 library(shiny)
 library(shinyjs)
 library(plotly)
+library(stringr)
+library(viridis)
 
-# Stability UI ----
-stabilityUI <- function(id) {
+# Quality UI ----
+qualityUI <- function(id) {
   ns <- NS(id)
-  # Stability configuration parameters ----
+  # Quality configuration parameters ----
   tagList(
-    tags$h3("Stability analysis"),
+    tags$h3("Quality analysis"),
     #tags$hr(),
     fluidRow(
-      column(12, wellPanel(id = "stabilityConf", 
+      column(12, wellPanel(id = ns("qualityConf"), 
                            style = "overflow: hidden;", 
                            fluidRow( # Row of configs
                              column(12, tags$h5("Configuration parameters")),
                              column(3, numericInput(ns("kmin"), "Min. num. of clusters:", 2, min = 2, max = 15)),
                              column(3, numericInput(ns("kmax"), "Max. num. of clusters:", 3, min = 2, max = 15)),
-                             column(3, numericInput(ns("bs"), "Bootstrap:", 20, min = 20, max = 500, step=10)),
                              column(3, numericInput(ns("seed"), "Seed:", 20, min = 1, step=10))
                            ),
                            fluidRow( # Row of buttons
@@ -37,22 +38,19 @@ stabilityUI <- function(id) {
     ),
     tags$hr(),
     # Stability output div handled by 'stability' function ----
-    uiOutput(ns("stabilityResult"))
-    #fluidRow(
-    #  tags$div(id='stabilityResult')
-    #)
+    uiOutput(ns("qualityResult"))
   )
 }
 
-# Stability Logic ----
-stability <- function(input, output, session, data) {
+# Quality Logic ----
+quality <- function(input, output, session, data) {
   
   results <- reactiveValues(
-    stabilityData=NULL,
+    qualityData=NULL,
     visibleDownloadButtons=FALSE
   )
   
-  output$stabilityResult <- renderUI({
+  output$qualityResult <- renderUI({
     if (is.null(data$inputData) || data$inputData == "" || is.null(data$inputDf)) {
       return(fluidRow(column(12, tags$h3(MSG_NO_INPUT_DATA))))
     }
@@ -60,15 +58,15 @@ stability <- function(input, output, session, data) {
   
   # If input data changes, reset and disable buttons
   observeEvent(data$inputData, {
-    results$stabilityData=NULL
+    results$qualityData=NULL
     results$visibleDownloadButtons = FALSE
-    output$stabilityResult = NULL
+    output$qualityResult = NULL
     shinyjs::html("evaluomeROutput", "")
   })
   
   output$btnDownloadCSV <- downloadHandler(
     filename = function(){
-      paste0("stabilityData",".zip")
+      paste0("qualityData",".zip")
       
     },
     content = function(file){
@@ -77,9 +75,9 @@ stability <- function(input, output, session, data) {
       on.exit(setwd(owd))
       files <- NULL;
       
-      for (table_name in names(results$stabilityData)) {
-        fileName <- paste(table_name,".csv",sep = "")
-        write.table(assay(results$stabilityData[[table_name]]),
+      for (table_name in names(results$qualityData)) {
+        fileName <- paste("quality_", table_name,".csv",sep = "")
+        write.table(assay(results$qualityData[[table_name]]),
                     fileName,
                     sep = ',',
                     row.names = F,
@@ -115,34 +113,34 @@ stability <- function(input, output, session, data) {
       shinyalert("Oops!", MSG_K_MIN_GREATER_THAN_K_MAX, type = "error")
       return(NULL)
     }
-    results$stabilityData =  runStability(data$inputDf, input$kmin, input$kmax, input$bs, input$seed)
-    if (is.null(results$stabilityData)) {
-      shinyalert("Oops!", MSG_STABILITY_WENT_WRONG, type = "error")
+    results$qualityData =  runQuality(data$inputDf, input$kmin, input$kmax, input$seed)
+    if (is.null(results$qualityData)) {
+      shinyalert("Oops!", MSG_QUALITY_WENT_WRONG, type = "error")
       return(NULL)
     }
     
     # Render tables
-    renderStabilityTablesTabs(output, results)
+    renderQualityTablesTabs(output, results)
     
     results$visibleDownloadButtons = TRUE
   })
+  
   return(NULL)
   
-  #return (reactive({cat("--> ", data$inputData, "\n")}))
 }
 
-# Stability private functions ----
-# Runs an evaluomeR stability execution
-runStability <- function(df, kmin, kmax, bs, seed) {
+# Quality private functions ----
+# Runs an evaluomeR quality execution
+runQuality <- function(df, kmin, kmax, seed) {
   cat(file=stderr(), 
-      "Running stability index with kmin=",kmin,", kmax=",kmax,
-      ", bs=", bs, ", seed=", seed,"\n")
+      "Running quality index with kmin=",kmin,", kmax=",kmax,
+      ", seed=", seed,"\n")
   
   result <- NULL
   withCallingHandlers({
     shinyjs::html("evaluomeROutput", "")
-    result <- stabilityRange(data=df, k.range=c(kmin, kmax), 
-                             bs=bs, seed=seed, getImages = FALSE)
+    result <- qualityRange(data=df, k.range=c(kmin, kmax), 
+                             seed=seed, getImages = FALSE)
   },
   message = function(m) {
     shinyjs::html(id = "evaluomeROutput", html = paste0(m$message, "<br>"), add = TRUE)
@@ -152,23 +150,22 @@ runStability <- function(df, kmin, kmax, bs, seed) {
   return(result)
 }
 
-# Renders a table given a stability output 'stabilityData'
-renderStabilityTablesTabs <- function(output, results) {
-  output$stabilityResult <- renderUI({
-    tabNum <- length(names(results$stabilityData))
-    tabNames <- names(results$stabilityData)
+renderQualityTablesTabs <- function(output, results) {
+  output$qualityResult <- renderUI({
+    tabNum <- length(names(results$qualityData))
+    tabNames <- names(results$qualityData)
     
     tagList(
       tags$h4("Result tables"),
       fluidRow(
         column(12,
                do.call(tabsetPanel,
-                       c(id='stabilityTables',
+                       c(id='qualityTables',
                          lapply(1:tabNum, function(i) {
                            tabName <- tabNames[i]
                            tabPanel(
                              title=paste0(tabName), 
-                             renderTable({assay(results$stabilityData[tabName])})
+                             renderTable({assay(results$qualityData[tabName])})
                            )
                          }
                          )
@@ -178,39 +175,68 @@ renderStabilityTablesTabs <- function(output, results) {
       ),
       tags$hr(),
       tags$h4("Result figures"),
-      renderStabilityFigures(results),
+      renderQualityFigures(results),
       tags$hr()
     )
     
   })
 }
 
-renderStabilityFigures <- function(results) {
-  stabilityMeanDf = as.data.frame(assay(results$stabilityData[["stability_mean"]]))
-  names(stabilityMeanDf) = gsub(x = names(stabilityMeanDf), pattern="^.*_.*_.*_", replacement = "k_")
-  stabilityMeanDfMelted = melt(stabilityMeanDf, id="Metric")
-  stabilityMeanDfMelted$value = as.numeric(stabilityMeanDfMelted$value)
+renderQualityFigures <- function(results) {
+  
+  qualityDfStand = standardizeQualityData(results$qualityData)
+  qualityDfStand$Metric = rownames(qualityDfStand)
+  qualityDfStandMelt = melt(qualityDfStand, id="Metric")
+  qualityDfStandMelt$value = as.numeric(qualityDfStandMelt$value)
   
   # K behaviour
   
-  p_kAcrossMetrics <- plot_ly(stabilityMeanDfMelted, x = ~Metric,
-          y = ~value, color = ~variable,
-          colors = viridis_pal(option = "D")(length(unique(inputMelt$variable))),
-          type = 'scatter', mode = 'lines+markers') %>%
+  p_kAcrossMetrics <- plot_ly(qualityDfStandMelt, x = ~Metric,
+                              y = ~value, color = ~variable,
+                              colors = viridis_pal(option = "D")(length(unique(inputMelt$variable))),
+                              type = 'scatter', mode = 'lines+markers') %>%
     layout(
       title = "K values across metrics", showlegend = TRUE,
-      xaxis = list(title = 'Metrics'), yaxis = list(title = 'Stability index', range = c(0,1))
+      xaxis = list(title = 'Metrics'), yaxis = list(title = 'Avg. silhouette width', range = c(0,1))
     )
   
-  p_MetricsAcrossK <- plot_ly(stabilityMeanDfMelted, x = ~variable,
-                              y = ~value, color = ~Metric,
+  p_MetricsAcrossK <- plot_ly(qualityDfStandMelt, x = ~variable,
+                              y = ~value, color = ~Metric, 
                               colors = viridis_pal(option = "D")(length(unique(inputMelt$Metric))),
                               type = 'scatter', mode = 'lines+markers') %>%
     layout(
       title = "Metrics across K values", showlegend = TRUE,
-      xaxis = list(title = 'K'), yaxis = list(title = 'Stability index', range = c(0,1))
+      xaxis = list(title = 'K'), yaxis = list(title = 'Avg. silhouette width',range = c(0,1))
     )
   
+  # Cluster behaviour
+  
+  ptlist = list()
+  i = 1
+  for (k_value in names(results$qualityData)) {
+    qualityDf = as.data.frame(assay(results$qualityData[[k_value]]))
+    qualityDfMelt = melt(qualityDf, id="Metric")
+    
+    qualityDfMeltClusterSize = qualityDfMelt[str_detect(qualityDfMelt$variable, "Cluster_._Size"), ]
+    qualityDfMeltClusterSize$value = as.numeric(qualityDfMeltClusterSize$value)
+    qualityDfMeltClusterSize$variable = gsub("_Size","", qualityDfMeltClusterSize$variable)
+    
+    
+    p_clusterSizes <- plot_ly(qualityDfMeltClusterSize, x = ~value,
+                  y = ~Metric, color = ~variable, 
+                  legendgroup = ~variable,
+                  showlegend = if (i == length(names(results$qualityData))) TRUE else FALSE,
+                  colors = viridis_pal(option = "D")(length(unique(qualityDfMeltClusterSize$variable))),
+                  type = 'bar', orientation='h') %>%
+      layout(
+        xaxis = list(title = 'Metrics'), yaxis = list(title = 'Cluster size')
+      )
+    ptlist[[i]] = p_clusterSizes
+    i = i +1
+    
+  }
+  
+  plotGrid = subplot(ptlist, shareY = TRUE, nrows = 1)
   
   
   return(renderUI({
@@ -223,8 +249,11 @@ renderStabilityFigures <- function(results) {
       tags$hr(),
       fluidRow(column(6, renderPlotly({
         p_MetricsAcrossK
+      }))),
+      tags$h5("Cluster size behaviour"),
+      fluidRow(column(6, renderPlotly({
+        plotGrid
       })))
     )
   }))
 } 
-

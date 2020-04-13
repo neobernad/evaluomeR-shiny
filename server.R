@@ -4,6 +4,7 @@ library(evaluomeR)
 library(plotly)
 
 source("modules/stability.R")
+source("modules/quality.R")
 
 server <- function(input, output, session) {
     rv <- reactiveValues(
@@ -58,6 +59,9 @@ server <- function(input, output, session) {
     # Logic for tab stabilityUI("tabStability") ----
     # 'tabStability' UI is managed by 'stabilityUI'
     callModule(stability, "tabStability", rv)
+    # Logic for tab qualityUi("tabQuality") ----
+    # 'tabQuality' UI is managed by 'qualityUi'
+    callModule(quality, "tabQuality", rv)
     
     
     
