@@ -1,6 +1,9 @@
 library(shiny)
 library(shinyjs)
 library(plotly)
+library(stringr)
+library(viridis)
+library(reshape2)
 
 # Stability UI ----
 stabilityUI <- function(id) {
