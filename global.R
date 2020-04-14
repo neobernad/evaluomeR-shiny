@@ -11,7 +11,9 @@ MSG_QUALITY_WENT_WRONG="Quality analysis calculation could not finish properly"
 
 ## Sample CSV data
 
-wd = paste0(dirname(rstudioapi::getSourceEditorContext()$path),"/")
+#wd = paste0(dirname(rstudioapi::getSourceEditorContext()$path),"/")
+wd = paste0(getwd(),"/")
+print(wd)
 
 SAMPLE_FILE_MAP = c("Gene expression differences" = paste0(wd, "data/dataset-metrics-Imbeaudetal-NAR2005.csv"),
                     "78 AgroPortal ontologies" = paste0(wd, "data/agro.csv"),
