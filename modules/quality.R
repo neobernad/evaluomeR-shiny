@@ -3,6 +3,7 @@ library(shinyjs)
 library(plotly)
 library(stringr)
 library(viridis)
+library(reshape2)
 
 # Quality UI ----
 qualityUI <- function(id) {
@@ -15,11 +16,14 @@ qualityUI <- function(id) {
       column(12, wellPanel(id = ns("qualityConf"), 
                            style = "overflow: hidden;", 
                            fluidRow( # Row of configs
-                             column(12, tags$h5("Configuration parameters")),
+                             column(12, tags$h5("Configuration parameters"))
+                           ),
+                           fluidRow(
                              column(3, numericInput(ns("kmin"), "Min. num. of clusters:", 2, min = 2, max = 15)),
                              column(3, numericInput(ns("kmax"), "Max. num. of clusters:", 3, min = 2, max = 15)),
                              column(3, numericInput(ns("seed"), "Seed:", 20, min = 1, step=10))
                            ),
+                           tags$hr(),
                            fluidRow( # Row of buttons
                              column(3, actionButton(ns("btnExecute"), "Execute", icon("terminal"), 
                                                     style="color: #fff; background-color: #337ab7; ")),
@@ -193,7 +197,7 @@ renderQualityFigures <- function(results) {
   
   p_kAcrossMetrics <- plot_ly(qualityDfStandMelt, x = ~Metric,
                               y = ~value, color = ~variable,
-                              colors = viridis_pal(option = "D")(length(unique(inputMelt$variable))),
+                              colors = viridis_pal(option = "D")(length(unique(qualityDfStandMelt$variable))),
                               type = 'scatter', mode = 'lines+markers') %>%
     layout(
       title = "K values across metrics", showlegend = TRUE,
@@ -202,7 +206,7 @@ renderQualityFigures <- function(results) {
   
   p_MetricsAcrossK <- plot_ly(qualityDfStandMelt, x = ~variable,
                               y = ~value, color = ~Metric, 
-                              colors = viridis_pal(option = "D")(length(unique(inputMelt$Metric))),
+                              colors = viridis_pal(option = "D")(length(unique(qualityDfStandMelt$Metric))),
                               type = 'scatter', mode = 'lines+markers') %>%
     layout(
       title = "Metrics across K values", showlegend = TRUE,
@@ -210,6 +214,9 @@ renderQualityFigures <- function(results) {
     )
   
   # Cluster behaviour
+  
+  maxNumClusters = length(names(results$qualityData))+1
+  color_palette = viridis_pal(option = "D")(maxNumClusters)
   
   ptlist = list()
   i = 1
@@ -226,17 +233,22 @@ renderQualityFigures <- function(results) {
                   y = ~Metric, color = ~variable, 
                   legendgroup = ~variable,
                   showlegend = if (i == length(names(results$qualityData))) TRUE else FALSE,
-                  colors = viridis_pal(option = "D")(length(unique(qualityDfMeltClusterSize$variable))),
+                  colors = color_palette[1:length(unique(qualityDfMeltClusterSize$variable))],
                   type = 'bar', orientation='h') %>%
       layout(
-        xaxis = list(title = 'Metrics'), yaxis = list(title = 'Cluster size')
+        xaxis = list(title = 'Cluster size'), yaxis = list(title = 'Metrics'),
+        annotations = list(text = paste0("Cluster of ", k_value),
+          xref = "paper", yref = "paper", yanchor = "bottom", xanchor = "center",
+          align = "center", x = 0.5, y = 1, showarrow = FALSE)
       )
     ptlist[[i]] = p_clusterSizes
     i = i +1
     
   }
   
-  plotGrid = subplot(ptlist, shareY = TRUE, nrows = 1)
+  nrows = as.integer((length(ptlist) / 2)) + 1
+  
+  plotGrid = subplot(ptlist, shareY = TRUE, shareX = TRUE, titleX = TRUE, margin = 0.05, nrows = nrows)
   
   
   return(renderUI({
@@ -246,12 +258,12 @@ renderQualityFigures <- function(results) {
       fluidRow(column(6, renderPlotly({
         p_kAcrossMetrics
       }))),
-      tags$hr(),
       fluidRow(column(6, renderPlotly({
         p_MetricsAcrossK
       }))),
+      tags$hr(),
       tags$h5("Cluster size behaviour"),
-      fluidRow(column(6, renderPlotly({
+      fluidRow(column(12, renderPlotly({
         plotGrid
       })))
     )

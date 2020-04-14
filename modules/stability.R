@@ -11,14 +11,21 @@ stabilityUI <- function(id) {
     #tags$hr(),
     fluidRow(
       column(12, wellPanel(id = "stabilityConf", 
-                           style = "overflow: hidden;", 
+                           style = "overflow: auto;", 
                            fluidRow( # Row of configs
-                             column(12, tags$h5("Configuration parameters")),
+                             column(12, tags$h5("Configuration parameters"))
+                           ),
+                           fluidRow(
+                             column(3, selectInput(ns("cbi"), "Select a classification algorithm:", 
+                                                   choices=evaluomeRSupportedCBI(), multiple = FALSE)),
                              column(3, numericInput(ns("kmin"), "Min. num. of clusters:", 2, min = 2, max = 15)),
                              column(3, numericInput(ns("kmax"), "Max. num. of clusters:", 3, min = 2, max = 15)),
-                             column(3, numericInput(ns("bs"), "Bootstrap:", 20, min = 20, max = 500, step=10)),
+                             column(3, numericInput(ns("bs"), "Bootstrap:", 20, min = 20, max = 500, step=10))
+                           ),
+                           fluidRow(
                              column(3, numericInput(ns("seed"), "Seed:", 20, min = 1, step=10))
                            ),
+                           tags$hr(),
                            fluidRow( # Row of buttons
                              column(3, actionButton(ns("btnExecute"), "Execute", icon("terminal"), 
                                                     style="color: #fff; background-color: #337ab7; ")),
@@ -115,7 +122,8 @@ stability <- function(input, output, session, data) {
       shinyalert("Oops!", MSG_K_MIN_GREATER_THAN_K_MAX, type = "error")
       return(NULL)
     }
-    results$stabilityData =  runStability(data$inputDf, input$kmin, input$kmax, input$bs, input$seed)
+    results$stabilityData =  runStability(data$inputDf, input$kmin, input$kmax,
+                                          input$cbi, input$bs, input$seed)
     if (is.null(results$stabilityData)) {
       shinyalert("Oops!", MSG_STABILITY_WENT_WRONG, type = "error")
       return(NULL)
@@ -133,7 +141,7 @@ stability <- function(input, output, session, data) {
 
 # Stability private functions ----
 # Runs an evaluomeR stability execution
-runStability <- function(df, kmin, kmax, bs, seed) {
+runStability <- function(df, kmin, kmax, cbi, bs, seed) {
   cat(file=stderr(), 
       "Running stability index with kmin=",kmin,", kmax=",kmax,
       ", bs=", bs, ", seed=", seed,"\n")
@@ -142,6 +150,7 @@ runStability <- function(df, kmin, kmax, bs, seed) {
   withCallingHandlers({
     shinyjs::html("evaluomeROutput", "")
     result <- stabilityRange(data=df, k.range=c(kmin, kmax), 
+                             cbi=cbi,
                              bs=bs, seed=seed, getImages = FALSE)
   },
   message = function(m) {
@@ -195,7 +204,7 @@ renderStabilityFigures <- function(results) {
   
   p_kAcrossMetrics <- plot_ly(stabilityMeanDfMelted, x = ~Metric,
           y = ~value, color = ~variable,
-          colors = viridis_pal(option = "D")(length(unique(inputMelt$variable))),
+          colors = viridis_pal(option = "D")(length(unique(stabilityMeanDfMelted$variable))),
           type = 'scatter', mode = 'lines+markers') %>%
     layout(
       title = "K values across metrics", showlegend = TRUE,
@@ -204,7 +213,7 @@ renderStabilityFigures <- function(results) {
   
   p_MetricsAcrossK <- plot_ly(stabilityMeanDfMelted, x = ~variable,
                               y = ~value, color = ~Metric,
-                              colors = viridis_pal(option = "D")(length(unique(inputMelt$Metric))),
+                              colors = viridis_pal(option = "D")(length(unique(stabilityMeanDfMelted$Metric))),
                               type = 'scatter', mode = 'lines+markers') %>%
     layout(
       title = "Metrics across K values", showlegend = TRUE,

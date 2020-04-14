@@ -53,8 +53,8 @@ ui <- navbarPage(theme = shinytheme("paper"),
             # Analysis tab - Main panel ====
             mainPanel(
                 tabsetPanel(type = "tabs",
-                            tabPanel("Quality", qualityUI("tabQuality")),
                             tabPanel("Stability", stabilityUI("tabStability")),
+                            tabPanel("Quality", qualityUI("tabQuality")),
                             tabPanel("Correlations", NULL),
                             tabPanel("Table", uiOutput("tabTable"))
                 )
