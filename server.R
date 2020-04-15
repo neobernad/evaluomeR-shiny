@@ -5,6 +5,7 @@ library(plotly)
 
 source("modules/stability.R")
 source("modules/quality.R")
+source("modules/correlations.R")
 
 server <- function(input, output, session) {
     rv <- reactiveValues(
@@ -62,7 +63,9 @@ server <- function(input, output, session) {
     # Logic for tab qualityUi("tabQuality") ----
     # 'tabQuality' UI is managed by 'qualityUi'
     callModule(quality, "tabQuality", rv)
-    
+    # Logic for tab correlationsUI("tabCorrelations") ----
+    # 'tabCorrelations' UI is managed by 'correlationsUI'
+    callModule(correlations, "tabCorrelations", rv)
     
     
 }

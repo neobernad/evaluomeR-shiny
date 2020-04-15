@@ -6,6 +6,7 @@ library(evaluomeR)
 
 source("modules/stability.R")
 source("modules/quality.R")
+source("modules/correlations.R")
 
 ui <- navbarPage(theme = shinytheme("paper"),
     windowTitle = "evaluomeR App",
@@ -19,7 +20,7 @@ ui <- navbarPage(theme = shinytheme("paper"),
         # Analysis tab - Sidebar ====
         sidebarLayout(
             sidebarPanel(
-                fileInput("inputCSV", "Choose CSV File",
+                fileInput("inputCSV", "Choose a CSV File",
                           multiple = FALSE,
                           accept = c("text/csv",
                                      "text/comma-separated-values,text/plain",
@@ -47,15 +48,16 @@ ui <- navbarPage(theme = shinytheme("paper"),
                 ),
                 
                 tags$hr(),
-                helpText(paste0("evaluomeR v", package.version("evaluomeR")))
+                helpText(paste0("evaluomeR v", package.version("evaluomeR"))),
+                width = 2 # sidebarPanel width
             ),
             
             # Analysis tab - Main panel ====
             mainPanel(
                 tabsetPanel(type = "tabs",
+                            tabPanel("Correlations", correlationsUI("tabCorrelations")),
                             tabPanel("Stability", stabilityUI("tabStability")),
                             tabPanel("Quality", qualityUI("tabQuality")),
-                            tabPanel("Correlations", NULL),
                             tabPanel("Table", uiOutput("tabTable"))
                 )
             )
