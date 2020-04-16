@@ -19,8 +19,12 @@ qualityUI <- function(id) {
                              column(12, tags$h5("Configuration parameters"))
                            ),
                            fluidRow(
+                             column(3, selectInput(ns("cbi"), "Select a classification algorithm:", 
+                                                   choices=evaluomeRSupportedCBI(), multiple = FALSE)),
                              column(3, numericInput(ns("kmin"), "Min. num. of clusters:", 2, min = 2, max = 15)),
-                             column(3, numericInput(ns("kmax"), "Max. num. of clusters:", 3, min = 2, max = 15)),
+                             column(3, numericInput(ns("kmax"), "Max. num. of clusters:", 3, min = 2, max = 15))
+                           ),
+                           fluidRow(
                              column(3, numericInput(ns("seed"), "Seed:", 20, min = 1, step=10))
                            ),
                            tags$hr(),
@@ -117,7 +121,8 @@ quality <- function(input, output, session, data) {
       shinyalert("Oops!", MSG_K_MIN_GREATER_THAN_K_MAX, type = "error")
       return(NULL)
     }
-    results$qualityData =  runQuality(data$inputDf, input$kmin, input$kmax, input$seed)
+    results$qualityData =  runQuality(data$inputDf, input$kmin, input$kmax, 
+                                      input$cbi, input$seed)
     if (is.null(results$qualityData)) {
       shinyalert("Oops!", MSG_QUALITY_WENT_WRONG, type = "error")
       return(NULL)
@@ -135,7 +140,7 @@ quality <- function(input, output, session, data) {
 
 # Quality private functions ----
 # Runs an evaluomeR quality execution
-runQuality <- function(df, kmin, kmax, seed) {
+runQuality <- function(df, kmin, kmax, cbi, seed) {
   cat(file=stderr(), 
       "Running quality index with kmin=",kmin,", kmax=",kmax,
       ", seed=", seed,"\n")
@@ -143,7 +148,7 @@ runQuality <- function(df, kmin, kmax, seed) {
   result <- NULL
   withCallingHandlers({
     shinyjs::html("evaluomeROutput", "")
-    result <- qualityRange(data=df, k.range=c(kmin, kmax), 
+    result <- qualityRange(data=df, k.range=c(kmin, kmax), cbi=cbi, 
                              seed=seed, getImages = FALSE)
   },
   message = function(m) {

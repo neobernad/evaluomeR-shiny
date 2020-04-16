@@ -7,6 +7,7 @@ library(evaluomeR)
 source("modules/stability.R")
 source("modules/quality.R")
 source("modules/correlations.R")
+source("modules/optimal_k.R")
 
 ui <- navbarPage(theme = shinytheme("paper"),
     windowTitle = "evaluomeR App",
@@ -55,9 +56,10 @@ ui <- navbarPage(theme = shinytheme("paper"),
             # Analysis tab - Main panel ====
             mainPanel(
                 tabsetPanel(type = "tabs",
+                            tabPanel("Optimal K", optimalkUI("tabOptimalk")),
+                            tabPanel("Quality", qualityUI("tabQuality")),
                             tabPanel("Correlations", correlationsUI("tabCorrelations")),
                             tabPanel("Stability", stabilityUI("tabStability")),
-                            tabPanel("Quality", qualityUI("tabQuality")),
                             tabPanel("Table", uiOutput("tabTable"))
                 )
             )

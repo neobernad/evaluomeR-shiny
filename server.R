@@ -6,6 +6,7 @@ library(plotly)
 source("modules/stability.R")
 source("modules/quality.R")
 source("modules/correlations.R")
+source("modules/optimal_k.R")
 
 server <- function(input, output, session) {
     rv <- reactiveValues(
@@ -66,6 +67,9 @@ server <- function(input, output, session) {
     # Logic for tab correlationsUI("tabCorrelations") ----
     # 'tabCorrelations' UI is managed by 'correlationsUI'
     callModule(correlations, "tabCorrelations", rv)
+    # Logic for tab optimalkUI("tabOptimalk") ----
+    # 'tabOptimalk' UI is managed by 'optimalkUI'
+    callModule(optimalk, "tabOptimalk", rv)
     
     
 }
