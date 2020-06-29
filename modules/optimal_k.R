@@ -18,9 +18,9 @@ optimalkUI <- function(id) {
                              column(12, tags$h5("Configuration parameters"))
                            ),
                            fluidRow(
-                             column(3, selectInput(ns("cbiStability"), "Select a classification algorithm for stability:", 
+                             column(3, selectInput(ns("cbiStability"), HTML("Select a classification algorithm for <b>stability</b>:"), 
                                                    choices=evaluomeRSupportedCBI(), multiple = FALSE)),
-                             column(3, selectInput(ns("cbiQuality"), "Select a classification algorithm for quality:", 
+                             column(3, selectInput(ns("cbiQuality"), HTML("Select a classification algorithm for <b>quality</b>:"), 
                                                    choices=evaluomeRSupportedCBI(), multiple = FALSE)),
                              column(3, numericInput(ns("kmin"), "Min. num. of clusters:", 2, min = 2, max = 15)),
                              column(3, numericInput(ns("kmax"), "Max. num. of clusters:", 3, min = 2, max = 15))
