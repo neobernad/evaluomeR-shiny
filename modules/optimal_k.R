@@ -12,14 +12,22 @@ optimalkUI <- function(id) {
   tagList(
     tags$h3("Optimal K value"),
     fluidRow(
-      column(12, wellPanel(id = ns("qualityConf"), 
+      column(12, wellPanel(id = ns("optimalkConf"), 
                            style = "overflow: hidden;", 
                            fluidRow( # Row of configs
-                             column(12, tags$h5("Quality configuration parameters"))
+                             column(12, tags$h5("Stability configuration parameters"))
                            ),
                            fluidRow(
-                             column(2, selectInput(ns("plotType"), "Plot type:", 
-                                                   choices=c("full", "triangular"), multiple = FALSE))
+                             column(3, selectInput(ns("cbiStability"), "Select a classification algorithm for stability:", 
+                                                   choices=evaluomeRSupportedCBI(), multiple = FALSE)),
+                             column(3, selectInput(ns("cbiQuality"), "Select a classification algorithm for quality:", 
+                                                   choices=evaluomeRSupportedCBI(), multiple = FALSE)),
+                             column(3, numericInput(ns("kmin"), "Min. num. of clusters:", 2, min = 2, max = 15)),
+                             column(3, numericInput(ns("kmax"), "Max. num. of clusters:", 3, min = 2, max = 15))
+                           ),
+                           fluidRow(
+                             column(3, numericInput(ns("bs"), "Bootstrap:", 20, min = 20, max = 500, step=10)),
+                             column(3, numericInput(ns("seedStability"), "Seed:", 20, min = 1, step=10))
                            ),
                            tags$hr(),
                            fluidRow( # Row of buttons
@@ -48,6 +56,8 @@ optimalkUI <- function(id) {
 optimalk <- function(input, output, session, data) {
   
   results <- reactiveValues(
+    stabilityData=NULL,
+    qualityData=NULL,
     optimalkData=NULL,
     visibleDownloadButtons=FALSE
   )
@@ -61,14 +71,16 @@ optimalk <- function(input, output, session, data) {
   # If input data changes, reset and disable buttons
   observeEvent(data$inputData, {
     results$optimalkData=NULL
+    results$stabilityData=NULL
+    results$qualityData=NULL
     results$visibleDownloadButtons = FALSE
-    output$correlationsResult = NULL
+    output$optimalkResult = NULL
     shinyjs::html("evaluomeROutput", "")
   })
   
   output$btnDownloadCSV <- downloadHandler(
     filename = function(){
-      paste0("optimalk",".zip")
+      paste0("optimal_k",".zip")
       
     },
     content = function(file){
@@ -76,7 +88,7 @@ optimalk <- function(input, output, session, data) {
       owd <- setwd(tempdir())
       on.exit(setwd(owd))
       files <- NULL;
-      fileName <- paste("correlations.csv",sep = "")
+      fileName <- paste("optimal_k.csv",sep = "")
       write.table(assay(results$optimalkData),
                                fileName,
                                sep = ',',
@@ -100,14 +112,21 @@ optimalk <- function(input, output, session, data) {
     if (is.null(data$inputDf)) {
       return(NULL)
     }
-    results$optimalkData =  runOptimalk(data$inputDf)
+    
+    results$stabilityData = runStability(data$inputDf, input$kmin, input$kmax,
+                                       input$cbiStability, input$bs, input$seed)
+    results$qualityData = runQuality(data$inputDf, input$kmin, input$kmax, 
+                                     input$cbiQuality, input$seed)
+    results$optimalkData = runOptimalk(data$inputDf, 
+                                       input$kmin, input$kmax,
+                                       results$stabilityData, results$qualityData)
     if (is.null(results$optimalkData)) {
       shinyalert("Oops!", MSG_CORRELATIONS_WENT_WRONG, type = "error")
       return(NULL)
     }
     
     # Render tables
-    renderOptimalkTablesTabs(output, results, plotType = input$plotType)
+    renderOptimalkTablesTabs(output, results)
     
     results$visibleDownloadButtons = TRUE
   })
@@ -118,15 +137,15 @@ optimalk <- function(input, output, session, data) {
 
 # Correlations private functions ----
 # Runs an evaluomeR correlations execution
-runOptimalk <- function(df) {
+runOptimalk <- function(df, kmin, kmax, stabilityData, qualityData) {
   cat(file=stderr(), 
-      "Running correlations\n")
+      "Running optimal K algorithm for [,", kmin, ", ", kmax, "]\n")
   
   result <- NULL
   withCallingHandlers({
     shinyjs::html("evaluomeROutput", "")
-    shinyjs::html(id = "evaluomeROutput", html = paste0("Calculating correlations...", "<br>"), add = TRUE)
-    result <- metricsCorrelations(data=df, getImages = FALSE)
+    shinyjs::html(id = "evaluomeROutput", html = paste0("Calculating optimal K values...", "<br>"), add = TRUE)
+    result <- getOptimalKValue(stabilityData, qualityData, k.range=c(kmin,kmax))
     shinyjs::html(id = "evaluomeROutput", html = paste0("Done", "<br>"), add = TRUE)
   },
   message = function(m) {
@@ -137,22 +156,28 @@ runOptimalk <- function(df) {
   return(result)
 }
 
-renderOptimalkTablesTabs <- function(output, results, plotType) {
-  output$correlationsResult <- renderUI({
+renderOptimalkTablesTabs <- function(output, results) {
+  
+  #optimalKTable = NULL
+  #optimalKTable$Metric = results$optimalkData$Metric
+  #optimalKTable$Optimal_k = results$optimalkData$Global_optimal_k
+  #optimalKTable = as.data.frame(optimalKTable)
+  
+  output$optimalkResult <- renderUI({
     tabNum <- 1
-    tabNames <- c("Correlations")
+    tabNames <- c("Optimal K values")
     
     tagList(
       tags$h4("Result tables"),
       fluidRow(
         column(12,
                do.call(tabsetPanel,
-                       c(id='correlationTable',
+                       c(id='optimalKTable',
                          lapply(1:tabNum, function(i) {
                            tabName <- tabNames[i]
                            tabPanel(
                              title=paste0(tabName), 
-                             renderTable({assay(results$optimalkData)})
+                             renderTable({results$optimalkData})
                            )
                          }
                          )

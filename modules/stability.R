@@ -147,7 +147,7 @@ stability <- function(input, output, session, data) {
 runStability <- function(df, kmin, kmax, cbi, bs, seed) {
   cat(file=stderr(), 
       "Running stability index with kmin=",kmin,", kmax=",kmax,
-      ", bs=", bs, ", seed=", seed,"\n")
+      ", CBI=", cbi, ", bs=", bs, ", seed=", seed,"\n")
   
   result <- NULL
   withCallingHandlers({

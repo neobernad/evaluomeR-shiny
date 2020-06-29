@@ -143,7 +143,7 @@ quality <- function(input, output, session, data) {
 runQuality <- function(df, kmin, kmax, cbi, seed) {
   cat(file=stderr(), 
       "Running quality index with kmin=",kmin,", kmax=",kmax,
-      ", seed=", seed,"\n")
+      ", CBI=", cbi, ", seed=", seed,"\n")
   
   result <- NULL
   withCallingHandlers({
