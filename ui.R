@@ -39,7 +39,7 @@ ui <- navbarPage(theme = shinytheme("paper"),
                                          Semicolon = ";",
                                          Tab = "\t"),
                              selected = ","),
-                div(style="width: 100px;",HTML("<br>")),
+                div(style="width: 50px;",HTML("<br>")),
                 
                 radioButtons("quote", "Quote",
                              choices = c(None = "",
