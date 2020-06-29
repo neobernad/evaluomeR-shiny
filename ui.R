@@ -56,11 +56,11 @@ ui <- navbarPage(theme = shinytheme("paper"),
             # Analysis tab - Main panel ====
             mainPanel(
                 tabsetPanel(type = "tabs",
-                            tabPanel("Optimal K", optimalkUI("tabOptimalk")),
+                            tabPanel("Table", uiOutput("tabTable")),
+                            tabPanel("Stability", stabilityUI("tabStability")),
                             tabPanel("Quality", qualityUI("tabQuality")),
                             tabPanel("Correlations", correlationsUI("tabCorrelations")),
-                            tabPanel("Stability", stabilityUI("tabStability")),
-                            tabPanel("Table", uiOutput("tabTable"))
+                            tabPanel("Optimal K", optimalkUI("tabOptimalk"))
                 )
             )
         ) #, tabPanel(...) for more tabs. Example: https://shiny.rstudio.com/gallery/navbar-example.html
