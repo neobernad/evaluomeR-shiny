@@ -15,7 +15,7 @@ optimalkUI <- function(id) {
       column(12, wellPanel(id = ns("optimalkConf"), 
                            style = "overflow: hidden;", 
                            fluidRow( # Row of configs
-                             column(12, tags$h5("Stability configuration parameters"))
+                             column(12, tags$h5("Configuration parameters"))
                            ),
                            fluidRow(
                              column(3, selectInput(ns("cbiStability"), "Select a classification algorithm for stability:", 
