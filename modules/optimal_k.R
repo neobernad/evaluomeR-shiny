@@ -27,7 +27,7 @@ optimalkUI <- function(id) {
                            ),
                            fluidRow(
                              column(3, numericInput(ns("bs"), "Bootstrap:", 20, min = 20, max = 500, step=10)),
-                             column(3, numericInput(ns("seedStability"), "Seed:", 20, min = 1, step=10))
+                             column(3, numericInput(ns("seed"), "Seed:", 20, min = 1, step=10))
                            ),
                            tags$hr(),
                            fluidRow( # Row of buttons
@@ -139,7 +139,7 @@ optimalk <- function(input, output, session, data) {
 # Runs an evaluomeR correlations execution
 runOptimalk <- function(df, kmin, kmax, stabilityData, qualityData) {
   cat(file=stderr(), 
-      "Running optimal K algorithm for [,", kmin, ", ", kmax, "]\n")
+      "Running optimal K algorithm for [", kmin, ", ", kmax, "]\n")
   
   result <- NULL
   withCallingHandlers({

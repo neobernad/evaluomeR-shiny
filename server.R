@@ -8,6 +8,23 @@ source("modules/quality.R")
 source("modules/correlations.R")
 source("modules/optimal_k.R")
 
+loadDataset <- function(input, rv) {
+    if (!is.null(rv$inputData) && rv$inputData != "") {
+        cat(file=stderr(), "Loading input:", rv$inputData, "\n")
+        tryCatch({
+            rv$inputDf <- read.csv(rv$inputData,
+                                   header = TRUE,
+                                   sep = input$sep,
+                                   quote = input$quote)
+        }, error = function(e) {
+            errorMsg = paste("Could not load CSV:",e)
+            cat(file=stderr(), errorMsg, "\n")
+            shinyalert("Oops!", errorMsg, type = "error")
+            safeError(e)
+        })
+    }
+}
+
 server <- function(input, output, session) {
     rv <- reactiveValues(
         inputData = NULL,
@@ -22,23 +39,16 @@ server <- function(input, output, session) {
         rv$inputData=input$inputCSV$datapath
     })
     
-    # When rv$inputData changes, load the df
-    observeEvent(rv$inputData, {
-        if (!is.null(rv$inputData) && rv$inputData != "") {
-            cat(file=stderr(), "Loading input:", rv$inputData, "\n")
-            tryCatch({
-                rv$inputDf <- read.csv(rv$inputData,
-                                       header = TRUE,
-                                       sep = input$sep,
-                                       quote = input$quote)
-            }, error = function(e) {
-                errorMsg = paste("Could not load CSV:",e)
-                cat(file=stderr(), errorMsg, "\n")
-                shinyalert("Oops!", errorMsg, type = "error")
-                safeError(e)
-                #stop(safeError(e))
-            })
-        }
+    # Update dataset if:
+    #   New data file
+    #   New separator
+    #   New quote
+    observeEvent({
+        input$sep
+        input$quote
+        rv$inputData
+    }, {
+        loadDataset(input, rv)
     })
     
     output$tableContent <- renderTable({
