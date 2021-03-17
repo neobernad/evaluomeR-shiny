@@ -26,7 +26,7 @@ optimalkUI <- function(id) {
                              column(3, numericInput(ns("kmax"), "Max. num. of clusters:", 3, min = 2, max = 15))
                            ),
                            fluidRow(
-                             column(3, numericInput(ns("bs"), "Bootstrap:", 20, min = 20, max = 500, step=10)),
+                             column(3, numericInput(ns("bs"), "Number of bootstrap replicates:", 20, min = 20, max = 500, step=10)),
                              column(3, numericInput(ns("seed"), "Seed:", 20, min = 1, step=10))
                            ),
                            tags$hr(),
