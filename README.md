@@ -20,3 +20,15 @@ To use the `evaluomeR-shiny` web portal locally:
    if (!require("BiocManager", quietly = TRUE))
        install.packages("BiocManager")
    BiocManager::install("evaluomeR")
+   install.packages("shiny")
+   ```
+2. Clone or download this repository:
+```bash
+$ git clone https://github.com/neobernad/evaluomeR-shiny.git
+``` 
+
+3. Run the Shiny app:
+```R
+library(shiny)
+shiny::runApp("path/to/evaluomeR-shiny")
+```
