@@ -10,7 +10,7 @@ The `evaluomeR-shiny` web portal builds on the `evaluomeR` R package, available 
 - **Data Preprocessing**: Handling high-dimensional datasets with techniques such as Principal Component Analysis (PCA).
 - **Interactive Visualizations**: Offering data uploads, adjustable parameters, and graphical outputs for non-experts.
 
-![evaluomeR-shiny Web Interface](docs/webportal_new_gray.png)
+![evaluomeR-shiny Web Interface](docs/1-home.png)
 
 ## Installation and Usage
 
